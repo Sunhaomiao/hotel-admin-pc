@@ -1,61 +1,24 @@
 import React, { useState } from 'react';
 import { Layout, Menu, Button, theme, Typography, Space, Switch, Divider } from 'antd';
-import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  ShopOutlined,
-  CheckSquareOutlined,
-  DashboardOutlined,
-  PlusCircleOutlined,
-  LogoutOutlined,
-  UserOutlined,
-  GlobalOutlined
-} from '@ant-design/icons';
+import { MenuFoldOutlined, MenuUnfoldOutlined, ShopOutlined, CheckSquareOutlined, DashboardOutlined, PlusCircleOutlined, LogoutOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 
 const { Header, Sider, Content } = Layout;
 const { Text } = Typography;
 
-// 1. DEFINE TRANSLATIONS (This fixes the ReferenceError)
 const translations = {
-  en: {
-    title: 'YI-SU ADMIN',
-    overview: 'Overview',
-    register: 'Register Hotel',
-    myHotels: 'My Hotels',
-    audit: 'Audit Center',
-    merchantPanel: 'MERCHANT PANEL',
-    adminPanel: 'ADMIN PANEL',
-    logout: 'Logout',
-  },
-  zh: {
-    title: '一宿管理',
-    overview: '概览',
-    register: '注册酒店',
-    myHotels: '我的酒店',
-    audit: '审核中心',
-    merchantPanel: '商户面板',
-    adminPanel: '管理面板',
-    logout: '退出登录',
-  }
+  en: { title: 'YI-SU', overview: 'Overview', register: 'Register', myHotels: 'My Hotels', audit: 'Audit', logout: 'Logout', admin: 'ADMIN', merch: 'MERCHANT' },
+  zh: { title: '一宿管理', overview: '概览', register: '注册酒店', myHotels: '我的酒店', audit: '审核中心', logout: '退出', admin: '管理端', merch: '商户端' }
 };
 
-const MainLayout = ({ lang = 'en', setLang = () => {} }) => {
+const MainLayout = ({ lang, setLang }) => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const userRole = localStorage.getItem('userRole') || 'merchant';
-  
-  const t = translations[lang] || translations['en'];
+  const t = translations[lang] || translations.en;
 
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
-  const handleLogout = () => {
-    localStorage.removeItem('userRole');
-    navigate('/login');
-  };
+  const { token: { colorBgContainer, borderRadiusLG } } = theme.useToken();
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: t.overview },
@@ -67,49 +30,33 @@ const MainLayout = ({ lang = 'en', setLang = () => {} }) => {
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+        <div style={{ height: 64, color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', fontWeight: 'bold' }}>
           {collapsed ? 'YS' : t.title}
         </div>
-        <Menu
-          theme="dark"
-          mode="inline"
-          selectedKeys={[location.pathname]}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-        />
+        <Menu theme="dark" mode="inline" selectedKeys={[location.pathname]} items={menuItems} onClick={({ key }) => navigate(key)} />
       </Sider>
       <Layout>
         <Header style={{ padding: '0 24px', background: colorBgContainer, display: 'flex', alignItems: 'center' }}>
-          <Button
-            type="text"
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-            onClick={() => setCollapsed(!collapsed)}
-          />
+          <Button type="text" icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />} onClick={() => setCollapsed(!collapsed)} />
           <div style={{ flex: 1 }} />
-          <Space size="large">
-            {/* Fix: Space direction is deprecated in some versions, 
-                Ant Design uses 'direction="vertical/horizontal"'. 
-                The warning suggests checking your specific antd version. */}
-            <Space>
-              <GlobalOutlined />
-              <Switch 
-                checkedChildren="中" 
-                unCheckedChildren="EN" 
-                checked={lang === 'zh'}
-                onChange={(checked) => setLang(checked ? 'zh' : 'en')}
-              />
-            </Space>
+          <Space size="middle">
+            {/* FIXED WIDTH WRAPPER TO PREVENT HEADER JUMPING */}
+            <div style={{ width: '90px', display: 'flex', justifyContent: 'center' }}>
+              <Space size={4}>
+                <GlobalOutlined style={{ color: '#1890ff' }} />
+                <Switch checkedChildren="中" unCheckedChildren="EN" checked={lang === 'zh'} onChange={(checked) => setLang(checked ? 'zh' : 'en')} />
+              </Space>
+            </div>
             <Divider type="vertical" />
-            <Text strong>{userRole === 'admin' ? t.adminPanel : t.merchantPanel}</Text>
-            <Button icon={<LogoutOutlined />} onClick={handleLogout}>{t.logout}</Button>
+            <Text strong>{userRole === 'admin' ? t.admin : t.merch}</Text>
+            <Button type="link" danger icon={<LogoutOutlined />} onClick={() => navigate('/login')}>{t.logout}</Button>
           </Space>
         </Header>
-        <Content style={{ margin: '24px', padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG }}>
+        <Content style={{ margin: '24px', padding: 24, background: colorBgContainer, borderRadius: borderRadiusLG, minHeight: 280 }}>
           <Outlet context={{ lang }} />
         </Content>
       </Layout>
     </Layout>
   );
 };
-
 export default MainLayout;
