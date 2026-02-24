@@ -1,10 +1,8 @@
 import React from 'react';
-import { Form, Input, Button, Typography, Row, Col, Space, Divider, message, Switch } from 'antd';
+import { Form, Input, Button, Typography, Row, Col, Space, Divider, message, Switch, Radio } from 'antd';
 import { 
   UserOutlined, 
   LockOutlined, 
-  MailOutlined,
-  ShopOutlined,
   CheckCircleOutlined,
   GlobalOutlined,
   CloudServerOutlined,
@@ -12,6 +10,7 @@ import {
   ArrowLeftOutlined
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { authAPI } from '../api';
 
 const { Title, Text } = Typography;
 
@@ -22,11 +21,9 @@ const signupT = {
     f1: "Instant Account Activation",
     f2: "Secure Hotel Data Storage",
     f3: "Direct Communication with Admins",
-    regTitle: "Merchant Registration",
+    regTitle: "User Registration",
     regSub: "Create an account to start listing hotels",
     user: "Username",
-    email: "Email Address",
-    hotel: "Hotel/Company Name",
     pass: "Password",
     confirm: "Confirm Password",
     btn: "Register Now",
@@ -40,11 +37,9 @@ const signupT = {
     f1: "账户即时激活",
     f2: "安全的酒店数据存储",
     f3: "与管理员直接沟通",
-    regTitle: "商户注册",
+    regTitle: "用户注册",
     regSub: "创建账号以开始发布酒店信息",
     user: "用户名",
-    email: "邮箱地址",
-    hotel: "酒店/公司名称",
     pass: "密码",
     confirm: "确认密码",
     btn: "立即注册",
@@ -56,11 +51,25 @@ const signupT = {
 
 const SignUp = ({ lang = 'en', setLang = () => {} }) => {
   const navigate = useNavigate();
+  const [loading, setLoading] = React.useState(false);
   const t = signupT[lang] || signupT.en;
 
-  const onFinish = (values) => {
-    message.success(t.success);
-    navigate('/login');
+  const onFinish = async (values) => {
+    setLoading(true);
+    try {
+      // 调用注册API，只发送后端需要的字段
+      await authAPI.register({
+        username: values.username,
+        password: values.password,
+        role: values.role
+      });
+      message.success(t.success);
+      navigate('/login');
+    } catch (error) {
+      message.error(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -132,17 +141,9 @@ const SignUp = ({ lang = 'en', setLang = () => {} }) => {
               <Text type="secondary">{t.regSub}</Text>
             </div>
             
-            <Form layout="vertical" size="large" onFinish={onFinish}>
+            <Form layout="vertical" size="large" onFinish={onFinish} initialValues={{ role: 'merchant' }}>
               <Form.Item name="username" rules={[{ required: true }]}>
                 <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder={t.user} />
-              </Form.Item>
-
-              <Form.Item name="email" rules={[{ required: true, type: 'email' }]}>
-                <Input prefix={<MailOutlined style={{ color: '#bfbfbf' }} />} placeholder={t.email} />
-              </Form.Item>
-
-              <Form.Item name="hotelName" rules={[{ required: true }]}>
-                <Input prefix={<ShopOutlined style={{ color: '#bfbfbf' }} />} placeholder={t.hotel} />
               </Form.Item>
 
               <Form.Item name="password" rules={[{ required: true }]}>
@@ -165,7 +166,14 @@ const SignUp = ({ lang = 'en', setLang = () => {} }) => {
                 <Input.Password prefix={<LockOutlined style={{ color: '#bfbfbf' }} />} placeholder={t.confirm} />
               </Form.Item>
 
-              <Button type="primary" htmlType="submit" block style={{ height: '50px', marginTop: '10px', borderRadius: '8px' }}>
+              <Form.Item label={lang === 'zh' ? '角色' : 'Role'} name="role">
+                <Radio.Group optionType="button" buttonStyle="solid" style={{ width: '100%' }}>
+                  <Radio.Button value="merchant">{lang === 'zh' ? '商户' : 'Merchant'}</Radio.Button>
+                  <Radio.Button value="admin">{lang === 'zh' ? '管理员' : 'Admin'}</Radio.Button>
+                </Radio.Group>
+              </Form.Item>
+
+              <Button type="primary" htmlType="submit" block style={{ height: '50px', marginTop: '10px', borderRadius: '8px' }} loading={loading}>
                 {t.btn}
               </Button>
 

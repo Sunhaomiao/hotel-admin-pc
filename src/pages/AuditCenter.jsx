@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Table, Tag, Space, Button, Modal, Input, message, Typography } from 'antd';
+import { Table, Tag, Space, Button, Modal, Input, message, Typography, Spin } from 'antd';
 import { 
   CheckCircleOutlined, 
   CloseCircleOutlined, 
   StopOutlined, 
-  ReloadOutlined 
+  ReloadOutlined,
+  LoadingOutlined 
 } from '@ant-design/icons';
-import { useOutletContext } from 'react-router-dom';
 
 const { Title } = Typography;
 
@@ -56,27 +56,25 @@ const auditT = {
   }
 };
 
-const AuditCenter = ({ hotels, setHotels }) => {
-  // 2. Access the global language state
-  const { lang } = useOutletContext();
-  const t = auditT[lang] || auditT.en;
-
+const AuditCenter = ({ hotels, updateHotelStatus, lang = 'en' }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentHotelId, setCurrentHotelId] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [loading, setLoading] = useState(false);
+  const t = auditT[lang] || auditT.en;
 
-  const updateStatus = (id, newStatus, reason = '') => {
-    const updated = hotels.map(h => 
-      h.id === id ? { ...h, status: newStatus, reason: reason } : h
-    );
-    setHotels(updated);
-    
-    // Translate the success message status
-    const translatedStatus = t.statusMap[newStatus];
-    message.success(`${t.msgSuccess} ${translatedStatus}`);
-    
-    setIsModalOpen(false);
-    setRejectReason('');
+  const handleUpdateStatus = async (id, newStatus, reason = '') => {
+    setLoading(true);
+    try {
+      await updateHotelStatus(id, newStatus, reason);
+      setIsModalOpen(false);
+      setRejectReason('');
+    } catch (error) {
+      message.error('Failed to update status. Please try again.');
+      console.error('Error updating status:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const columns = [
@@ -103,24 +101,44 @@ const AuditCenter = ({ hotels, setHotels }) => {
         <Space size="middle">
           {record.status === 'pending' && (
             <>
-              <Button type="link" icon={<CheckCircleOutlined />} onClick={() => updateStatus(record.id, 'approved')}>
+              <Button 
+                type="link" 
+                icon={<CheckCircleOutlined />} 
+                loading={loading} 
+                onClick={() => handleUpdateStatus(record._id, 'approved')}
+              >
                 {t.btnApprove}
               </Button>
-              <Button type="link" danger icon={<CloseCircleOutlined />} onClick={() => {
-                setCurrentHotelId(record.id);
-                setIsModalOpen(true);
-              }}>
+              <Button 
+                type="link" 
+                danger 
+                icon={<CloseCircleOutlined />} 
+                loading={loading} 
+                onClick={() => {
+                  setCurrentHotelId(record._id);
+                  setIsModalOpen(true);
+                }}
+              >
                 {t.btnReject}
               </Button>
             </>
           )}
           {record.status === 'approved' && (
-            <Button danger icon={<StopOutlined />} onClick={() => updateStatus(record.id, 'offline')}>
+            <Button 
+              danger 
+              icon={<StopOutlined />} 
+              loading={loading} 
+              onClick={() => handleUpdateStatus(record._id, 'offline')}
+            >
               {t.btnOffline}
             </Button>
           )}
           {record.status === 'offline' && (
-            <Button icon={<ReloadOutlined />} onClick={() => updateStatus(record.id, 'approved')}>
+            <Button 
+              icon={<ReloadOutlined />} 
+              loading={loading} 
+              onClick={() => handleUpdateStatus(record._id, 'approved')}
+            >
               {t.btnRestore}
             </Button>
           )}
@@ -137,8 +155,9 @@ const AuditCenter = ({ hotels, setHotels }) => {
       <Modal 
         title={t.modalTitle} 
         open={isModalOpen} 
-        onOk={() => updateStatus(currentHotelId, 'rejected', rejectReason)}
+        onOk={() => handleUpdateStatus(currentHotelId, 'rejected', rejectReason)}
         onCancel={() => setIsModalOpen(false)}
+        confirmLoading={loading}
         okText={lang === 'zh' ? '确定' : 'Confirm'}
         cancelText={lang === 'zh' ? '取消' : 'Cancel'}
       >

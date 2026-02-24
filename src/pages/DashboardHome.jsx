@@ -1,13 +1,13 @@
 import React from 'react';
-import { Row, Col, Card, Statistic, Typography, Tag } from 'antd';
+import { Row, Col, Card, Statistic, Typography, Tag, Spin } from 'antd';
 import { 
   ShopOutlined, 
   CheckCircleOutlined, 
   ClockCircleOutlined, 
   InfoCircleOutlined,
-  GlobalOutlined 
+  GlobalOutlined,
+  LoadingOutlined 
 } from '@ant-design/icons';
-import { useOutletContext } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 
@@ -53,11 +53,8 @@ const dashT = {
   }
 };
 
-const DashboardHome = ({ hotels }) => {
-  // 2. Get global language state
-  const { lang } = useOutletContext();
+const DashboardHome = ({ hotels, loading, lang = 'en' }) => {
   const t = dashT[lang] || dashT.en;
-
   const userRole = localStorage.getItem('userRole') || 'merchant';
   const isAdmin = userRole === 'admin';
 
@@ -82,44 +79,52 @@ const DashboardHome = ({ hotels }) => {
         </Tag>
       </div>
 
-      <Row gutter={16}>
-        <Col span={8}>
-          <Card bordered={false} style={{ borderTop: '4px solid #1890ff', borderRadius: '8px' }}>
-            <Statistic 
-              title={isAdmin ? t.statTotalAdmin : t.statTotalMerch} 
-              value={total} 
-              prefix={<ShopOutlined />} 
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card bordered={false} style={{ borderTop: '4px solid #faad14', borderRadius: '8px' }}>
-            <Statistic 
-              title={isAdmin ? t.statPendingAdmin : t.statPendingMerch} 
-              value={pending} 
-              prefix={<ClockCircleOutlined />} 
-              valueStyle={{ color: '#faad14' }}
-            />
-          </Card>
-        </Col>
-        <Col span={8}>
-          <Card bordered={false} style={{ borderTop: '4px solid #52c41a', borderRadius: '8px' }}>
-            <Statistic 
-              title={isAdmin ? t.statLiveAdmin : t.statLiveMerch} 
-              value={approved} 
-              prefix={<CheckCircleOutlined />} 
-              valueStyle={{ color: '#52c41a' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <Spin size="large" tip="Loading statistics..." />
+        </div>
+      ) : (
+        <>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Card bordered={false} style={{ borderTop: '4px solid #1890ff', borderRadius: '8px' }}>
+                <Statistic 
+                  title={isAdmin ? t.statTotalAdmin : t.statTotalMerch} 
+                  value={total} 
+                  prefix={<ShopOutlined />} 
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card bordered={false} style={{ borderTop: '4px solid #faad14', borderRadius: '8px' }}>
+                <Statistic 
+                  title={isAdmin ? t.statPendingAdmin : t.statPendingMerch} 
+                  value={pending} 
+                  prefix={<ClockCircleOutlined />} 
+                  valueStyle={{ color: '#faad14' }}
+                />
+              </Card>
+            </Col>
+            <Col span={8}>
+              <Card bordered={false} style={{ borderTop: '4px solid #52c41a', borderRadius: '8px' }}>
+                <Statistic 
+                  title={isAdmin ? t.statLiveAdmin : t.statLiveMerch} 
+                  value={approved} 
+                  prefix={<CheckCircleOutlined />} 
+                  valueStyle={{ color: '#52c41a' }}
+                />
+              </Card>
+            </Col>
+          </Row>
 
-      <Card title={t.actionTitle} style={{ marginTop: '24px', borderRadius: '8px' }}>
-        <Text>
-          <InfoCircleOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
-          {isAdmin ? t.actionAdmin(pending) : t.actionMerch}
-        </Text>
-      </Card>
+          <Card title={t.actionTitle} style={{ marginTop: '24px', borderRadius: '8px' }}>
+            <Text>
+              <InfoCircleOutlined style={{ marginRight: '8px', color: '#1890ff' }} />
+              {isAdmin ? t.actionAdmin(pending) : t.actionMerch}
+            </Text>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
