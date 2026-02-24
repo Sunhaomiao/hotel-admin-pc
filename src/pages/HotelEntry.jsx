@@ -1,12 +1,29 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Form, Input, Button, Select, DatePicker, InputNumber, 
-  Space, Card, Typography, message, Divider, Row, Col 
+  Form, 
+  Input, 
+  Button, 
+  Select, 
+  DatePicker, 
+  InputNumber, 
+  Space, 
+  Card, 
+  Typography, 
+  message,
+  Tooltip,
+  Divider,
+  Row, 
+  Col, 
+  Spin
 } from 'antd';
 import { 
-  PlusOutlined, DeleteOutlined, SaveOutlined, ShopOutlined 
+  PlusOutlined, 
+  DeleteOutlined, 
+  SaveOutlined, 
+  QuestionCircleOutlined,
+  ShopOutlined,
+  LoadingOutlined
 } from '@ant-design/icons';
-import { useOutletContext } from 'react-router-dom';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -63,21 +80,28 @@ const entryT = {
   }
 };
 
-const HotelEntry = ({ onSave }) => {
-  // 2. Access the global language state from MainLayout
-  const { lang } = useOutletContext();
+const HotelEntry = ({ onSave, lang = 'en' }) => {
   const t = entryT[lang] || entryT.en;
   
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
 
-  const onFinish = (values) => {
-    const formattedValues = {
-      ...values,
-      openingDate: values.openingDate ? values.openingDate.format('YYYY-MM-DD') : '',
-    };
-    onSave(formattedValues);
-    message.success(t.msgSuccess);
-    form.resetFields();
+  const onFinish = async (values) => {
+    setLoading(true);
+    try {
+      const formattedValues = {
+        ...values,
+        openingDate: values.openingDate ? values.openingDate.format('YYYY-MM-DD') : '',
+      };
+      await onSave(formattedValues);
+      message.success(t.msgSuccess);
+      form.resetFields();
+    } catch (error) {
+      message.error('Failed to submit hotel information. Please try again.');
+      console.error('Error submitting hotel:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -185,9 +209,10 @@ const HotelEntry = ({ onSave }) => {
           <Button 
             type="primary" 
             htmlType="submit" 
-            icon={<SaveOutlined />} 
+            icon={loading ? <LoadingOutlined /> : <SaveOutlined />} 
             size="large" 
             block
+            loading={loading}
             style={{ height: '50px', marginTop: 40 }}
           >
             {t.submit}

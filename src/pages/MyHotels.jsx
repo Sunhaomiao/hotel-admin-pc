@@ -1,6 +1,6 @@
 import React from 'react';
-import { Table, Tag, Card, Typography, Space, Empty } from 'antd';
-import { useOutletContext } from 'react-router-dom';
+import { Table, Tag, Card, Typography, Space, Empty, Spin } from 'antd';
+import { LoadingOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -40,9 +40,7 @@ const myHotelsT = {
   }
 };
 
-const MyHotels = ({ hotels }) => {
-  // 2. Access the global language state
-  const { lang } = useOutletContext();
+const MyHotels = ({ hotels, loading, lang = 'en' }) => {
   const t = myHotelsT[lang] || myHotelsT.en;
 
   const columns = [
@@ -84,15 +82,21 @@ const MyHotels = ({ hotels }) => {
   return (
     <div style={{ padding: '2px' }}>
       <Card bordered={false} title={t.cardTitle}>
-        <Table 
-          dataSource={hotels} 
-          columns={columns} 
-          rowKey="id" 
-          pagination={{ pageSize: 5 }}
-          locale={{ 
-            emptyText: <Empty description={t.emptyDesc} /> 
-          }}
-        />
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px' }}>
+            <Spin size="large" tip="Loading hotels..." />
+          </div>
+        ) : (
+          <Table 
+            dataSource={hotels} 
+            columns={columns} 
+            rowKey="_id" 
+            pagination={{ pageSize: 5 }}
+            locale={{ 
+              emptyText: <Empty description={t.emptyDesc} /> 
+            }}
+          />
+        )}
       </Card>
     </div>
   );
